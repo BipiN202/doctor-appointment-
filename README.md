@@ -3,7 +3,7 @@ doctor-appointment-system/
 │ ├── src/
 │ │ ├── components/
 │ │ ├── context/
-│ │ ├── pages/
+│ │ ├── 
 │ │ ├── api.js
 │ │ ├── App.js
 │ │ └── index.js
