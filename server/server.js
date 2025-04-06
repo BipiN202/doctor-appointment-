@@ -36,6 +36,7 @@ if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
   });
 }
+console.log("Mongo URI:", process.env.MONGODB_URI);
 
 // Error Handling Middleware
 app.use((req, res, next) => {
