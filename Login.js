@@ -16,26 +16,13 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
+    
     try {
       const res = await api.post('/users/login', formData);
-
-      if (res.data.success) {
-        // Store token and user data
-        localStorage.setItem('token', res.data.token);
-        localStorage.setItem('user', JSON.stringify(res.data.user));
-
-        // Redirect based on role
-        if (res.data.user.role === 'admin') {
-          navigate('/admin/dashboard');
-        } else {
-          navigate('/dashboard');
-        }
-      } else {
-        setError(res.data.message || 'Login failed');
-      }
+      localStorage.setItem('token', res.data.token);
+      navigate('/');
     } catch (err) {
-      setError(err.message || 'Login failed. Please try again.');
+      setError(err.response?.data?.error || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -45,7 +32,7 @@ const Login = () => {
     <Container className="d-flex align-items-center justify-content-center" style={{ minHeight: '100vh' }}>
       <Card style={{ width: '100%', maxWidth: '400px', padding: '2rem' }}>
         <h2 className="text-center mb-4">Login</h2>
-
+        
         {error && <Alert variant="danger">{error}</Alert>}
 
         <Form onSubmit={handleSubmit}>
@@ -56,7 +43,7 @@ const Login = () => {
               placeholder="Enter email"
               required
               value={formData.email}
-              onChange={e => setFormData({ ...formData, email: e.target.value })}
+              onChange={e => setFormData({...formData, email: e.target.value})}
             />
           </Form.Group>
 
@@ -67,14 +54,14 @@ const Login = () => {
               placeholder="Password"
               required
               value={formData.password}
-              onChange={e => setFormData({ ...formData, password: e.target.value })}
+              onChange={e => setFormData({...formData, password: e.target.value})}
             />
           </Form.Group>
 
-          <Button
-            variant="primary"
-            type="submit"
-            className="w-100"
+          <Button 
+            variant="primary" 
+            type="submit" 
+            className="w-100" 
             disabled={loading}
           >
             {loading ? 'Logging in...' : 'Login'}
@@ -89,20 +76,6 @@ const Login = () => {
       </Card>
     </Container>
   );
-};
-// In server/middleware/admin.js
-const adminAuth = (req, res, next) => {
-  if (!req.user || req.user.role !== 'admin') {
-    console.log(`Admin access denied to ${req.user?.email || 'unknown'} at ${new Date()}`);
-    return res.status(403).json({
-      success: false,
-      error: 'Admin privileges required'
-    });
-  }
-
-  // Audit log entry
-  console.log(`Admin access granted to ${req.user.email} at ${new Date()}`);
-  next();
 };
 
 export default Login;
