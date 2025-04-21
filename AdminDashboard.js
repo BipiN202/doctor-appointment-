@@ -1,159 +1,95 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Modal, Alert } from 'react-bootstrap';
-import { FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
-import DoctorManagementForm from '../components/DoctorManagementForm';
+import { Container, Tabs, Tab, Table, Button } from 'react-bootstrap';
+import AddDoctorForm from './AddDoctorForm';
 import api from '../api';
 
 const AdminDashboard = () => {
-    const [doctors, setDoctors] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [showModal, setShowModal] = useState(false);
-    const [selectedDoctor, setSelectedDoctor] = useState(null);
-    const [modalMode, setModalMode] = useState('add');
+  const [users, setUsers] = useState([]);
+  const [doctors, setDoctors] = useState([]);
 
-    const fetchDoctors = async () => {
-        try {
-            const response = await api.get('/doctors');
-            setDoctors(response.data);
-            setError('');
-        } catch (err) {
-            setError('Failed to fetch doctors');
-            console.error('Error fetching doctors:', err);
-        } finally {
-            setLoading(false);
-        }
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const usersRes = await api.get('/admin/users');
+        const doctorsRes = await api.get('/doctors');
+        setUsers(usersRes.data);
+        setDoctors(doctorsRes.data);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+      }
     };
+    fetchData();
+  }, []);
 
-    useEffect(() => {
-        fetchDoctors();
-    }, []);
-
-    const handleAddDoctor = () => {
-        setSelectedDoctor(null);
-        setModalMode('add');
-        setShowModal(true);
-    };
-
-    const handleEditDoctor = (doctor) => {
-        setSelectedDoctor(doctor);
-        setModalMode('edit');
-        setShowModal(true);
-    };
-
-    const handleDeleteDoctor = async (doctorId) => {
-        if (window.confirm('Are you sure you want to delete this doctor?')) {
-            try {
-                await api.delete(`/doctors/${doctorId}`);
-                setDoctors(doctors.filter(doctor => doctor._id !== doctorId));
-            } catch (err) {
-                setError('Failed to delete doctor');
-                console.error('Error deleting doctor:', err);
-            }
-        }
-    };
-
-    const handleFormSuccess = () => {
-        setShowModal(false);
-        fetchDoctors();
-    };
-
-    if (loading) {
-        return (
-            <Container className="mt-4">
-                <div className="text-center">
-                    <div className="spinner-border" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                    </div>
-                </div>
-            </Container>
-        );
+  const deleteUser = async (userId) => {
+    try {
+      await api.delete(`/admin/users/${userId}`);
+      setUsers(users.filter(user => user._id !== userId));
+    } catch (err) {
+      console.error('Error deleting user:', err);
     }
+  };
 
-    return (
-        <Container className="mt-4">
-            <Row className="mb-4">
-                <Col>
-                    <h2>Doctor Management</h2>
-                </Col>
-                <Col className="text-end">
-                    <Button variant="primary" onClick={handleAddDoctor}>
-                        <FiPlus className="me-2" />
-                        Add New Doctor
+  return (
+    <Container className="mt-4">
+      <h2>Admin Dashboard</h2>
+      
+      <Tabs defaultActiveKey="users" className="mb-3">
+        <Tab eventKey="users" title="Manage Users">
+          <Table striped bordered hover>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map(user => (
+                <tr key={user._id}>
+                  <td>{user.name}</td>
+                  <td>{user.email}</td>
+                  <td>{user.role}</td>
+                  <td>
+                    <Button 
+                      variant="danger" 
+                      size="sm"
+                      onClick={() => deleteUser(user._id)}
+                    >
+                      Delete
                     </Button>
-                </Col>
-            </Row>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Tab>
 
-            {error && <Alert variant="danger">{error}</Alert>}
-
-            <Card>
-                <Card.Body>
-                    <Table striped hover responsive>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Specialization</th>
-                                <th>Hospital</th>
-                                <th>Experience</th>
-                                <th>Consultation Fee</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {doctors.map(doctor => (
-                                <tr key={doctor._id}>
-                                    <td>{doctor.name}</td>
-                                    <td>{doctor.specialization}</td>
-                                    <td>{doctor.hospital}</td>
-                                    <td>{doctor.experience} years</td>
-                                    <td>${doctor.consultationFee}</td>
-                                    <td>
-                                        <Button
-                                            variant="outline-primary"
-                                            size="sm"
-                                            className="me-2"
-                                            onClick={() => handleEditDoctor(doctor)}
-                                        >
-                                            <FiEdit2 />
-                                        </Button>
-                                        <Button
-                                            variant="outline-danger"
-                                            size="sm"
-                                            onClick={() => handleDeleteDoctor(doctor._id)}
-                                        >
-                                            <FiTrash2 />
-                                        </Button>
-                                    </td>
-                                </tr>
-                            ))}
-                            {doctors.length === 0 && (
-                                <tr>
-                                    <td colSpan="6" className="text-center">
-                                        No doctors found
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </Table>
-                </Card.Body>
-            </Card>
-
-            <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
-                <Modal.Header closeButton>
-                    <Modal.Title>
-                        {modalMode === 'add' ? 'Add New Doctor' : 'Edit Doctor'}
-                    </Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <DoctorManagementForm
-                        doctor={selectedDoctor}
-                        mode={modalMode}
-                        onSuccess={handleFormSuccess}
-                    />
-                </Modal.Body>
-            </Modal>
-        </Container>
-    );
+        <Tab eventKey="doctors" title="Manage Doctors">
+          <AddDoctorForm />
+          <Table striped bordered hover className="mt-3">
+            <thead>
+              <tr>
+                <th>Doctor Name</th>
+                <th>Specialization</th>
+                <th>License Number</th>
+              </tr>
+            </thead>
+            <tbody>
+              {doctors.map(doctor => (
+                <tr key={doctor._id}>
+                  <td>{doctor.name}</td>
+                  <td>{doctor.specialization}</td>
+                  <td>{doctor.licenseNumber}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Tab>
+      </Tabs>
+    </Container>
+  );
 };
 
-export default AdminDashboard; 
+export default AdminDashboard;
